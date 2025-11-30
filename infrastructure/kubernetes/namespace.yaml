@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cancer-mlops
+  labels:
+    name: cancer-mlops
+    environment: production

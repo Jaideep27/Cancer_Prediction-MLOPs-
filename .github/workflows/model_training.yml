@@ -1,0 +1,66 @@
+name: Model Training Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_version:
+        description: 'Model version to train'
+        required: true
+        default: '1.0'
+  schedule:
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e .
+
+    - name: Download data
+      run: |
+        # Add data download logic here if needed
+        echo "Data download step"
+
+    - name: Train models
+      run: |
+        python scripts/train_model.py --version ${{ github.event.inputs.model_version || '1.0' }}
+
+    - name: Evaluate models
+      run: |
+        python scripts/evaluate_model.py
+
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-models-${{ github.event.inputs.model_version || '1.0' }}
+        path: |
+          models/
+          training_results.json
+          evaluation_results.json
+
+    - name: Upload to model registry
+      run: |
+        echo "Upload to model registry"
+        # Add model registry upload logic
+        # Examples: MLflow, AWS SageMaker, Azure ML, etc.
